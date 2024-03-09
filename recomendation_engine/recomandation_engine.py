@@ -1,5 +1,6 @@
 import pandas as pd
 
+
 class recommandation_engine:
     def __init__(self):
         pass
@@ -12,7 +13,9 @@ class recommandation_engine:
 
 
 class random_engin(recommandation_engine):
-    def __init__(self, datas):
+
+    def __init__(self, datas: pd.DataFrame):
+        super().__init__()
         self.datas = datas
 
     def predict(self):
@@ -20,4 +23,3 @@ class random_engin(recommandation_engine):
 
     def predict_selection(self, selection_size=10):
         return self.datas.sample(n=selection_size)
-

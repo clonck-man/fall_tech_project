@@ -6,7 +6,7 @@ import os
 from imdb.imdb import get_movie_poster
 import pandas as pd
 
-from recomendatio_engine.recomandation_engine import random_engin
+from recomendation_engine.recomandation_engine import random_engin
 
 
 def load_and_resize_image(path, width, height):
@@ -22,7 +22,7 @@ class App(ctk.CTk):
         super().__init__()
 
         # prediction
-        self.df_movies = pd.read_csv("data/movies_app.csv")
+        self.df_movies = pd.read_csv("data/clean_datas/movies_app.csv")
         self.recommandation_results = []
         self.known_ids = []
 
@@ -88,7 +88,7 @@ class App(ctk.CTk):
             print(f"Error changing image: {e}")
 
     def write_to_csv(self):
-        file_path = "data/recommandation_results.csv"
+        file_path = "data/kpi_datas/recommandation_results.csv"
 
         df = []
         if os.path.isfile(file_path):
