@@ -186,3 +186,4 @@ fabric.properties
 # idea folder, uncomment if you don't need it
 # .idea
 /data/kpi_datas/recommandation_results.csv
+/data/users_datas/data_prep.ipynb
