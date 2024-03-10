@@ -6,7 +6,7 @@ import os
 from imdb.imdb import get_movie_poster
 import pandas as pd
 
-from recomendation_engine.recomandation_engine import random_engin, tag_engine
+from recomendation_engine.recomandation_engine import random_engin, tag_engine, user_engine
 
 import json
 import random
@@ -19,6 +19,8 @@ def json_int_keys_decoder(dictionary):
 class App(ctk.CTk):
     def __init__(self):
         super().__init__()
+
+        self.df_movies = pd.read_csv("data/clean_datas/movies_app.csv")
         self.__init_interface__()
 
         # Recommandations
@@ -64,8 +66,6 @@ class App(ctk.CTk):
         self.unknown_btn.grid(row=2, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
 
     def __init_data__(self):
-        self.df_movies = pd.read_csv("data/clean_datas/movies_app.csv")
-
         with open('data/clean_datas/movies_tags.json', 'r') as f:
             self.movies_tags = json.load(f, object_hook=json_int_keys_decoder)
 
@@ -80,6 +80,7 @@ class App(ctk.CTk):
     def __init_engines__(self):
         self.random_engine = random_engin(self.df_movies)
         self.tag_engine = tag_engine(self.df_movies, self.movies_tags, self.user_pref, self.known_ids)
+        self.user_engine = user_engine(self.df_movies, self.user_pref)
 
     # ===================================== #
     def get_random_recommandation(self):
@@ -121,6 +122,23 @@ class App(ctk.CTk):
 
         return res
 
+    def get_user_recommandation(self):
+        reco_ids = self.user_engine.predict_selection(self.nbr_recommandations)
+
+        res = []
+        for id_ in reco_ids:
+            recommandation = self.df_movies.loc[self.df_movies['id'] == id_]
+
+            res.append(
+                [
+                    recommandation["id"].iloc[0],
+                    recommandation["title"].iloc[0],
+                    recommandation["poster_path"].iloc[0],
+                    "users"
+                ]
+            )
+        return res
+
     def get_new_recommandations(self):
         if not isinstance(self.user_pref, pd.DataFrame):
             self.recommandations = self.get_random_recommandation()
@@ -130,9 +148,15 @@ class App(ctk.CTk):
 
         random_reco = self.get_random_recommandation()
         tag_reco = self.get_tags_recommandation()
-        for random_rec, tag_rec in zip(random_reco, tag_reco):
-            res.append(random_rec)
-            res.append(tag_rec)
+        users_reco = self.get_user_recommandation()
+
+        for random_rec, tag_rec, user_rec in zip(random_reco, tag_reco, users_reco):
+            if random_rec[0] not in self.known_ids:
+                res.append(random_rec)
+            if tag_rec[0] not in self.known_ids:
+                res.append(tag_rec)
+            if user_rec[0] not in self.known_ids:
+                res.append(user_rec)
 
             if len(res) >= self.nbr_recommandations:
                 break

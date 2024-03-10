@@ -1,5 +1,8 @@
 import pandas as pd
+import glob
 from collections import Counter, defaultdict
+from sklearn.neighbors import NearestNeighbors
+import random
 
 
 class recommandation_engine:
@@ -74,3 +77,47 @@ class tag_engine(recommandation_engine):
 
         return recommended_movies
 
+
+class user_engine(recommandation_engine):
+    def __init__(self, movies, user, k=1):
+        super().__init__()
+
+        if not isinstance(user, pd.DataFrame):
+            return
+
+        self.matrix = self.create_user_movie_matrix(pd.DataFrame(columns=movies.set_index('id').T.columns))
+        self.model = NearestNeighbors(n_neighbors=k, metric='cosine').fit(self.matrix)
+
+        self.user = user
+        self.recommandation = self.create_recommandation()
+
+    def create_new_row(self, columns, user):
+        user = user[user['1'] != False]
+        list_ids = user['0'].to_list()
+        new_row = pd.DataFrame([[False] * len(columns)], columns=columns)
+        for id_ in list_ids:
+            if id_ in new_row.columns:
+                new_row[id_] = True
+
+        return new_row
+
+    def create_user_movie_matrix(self, matrix, path='data/users_datas/*.csv'):
+        users_csv = glob.glob(path)
+
+        for user_csv in users_csv:
+            df_user = pd.read_csv(user_csv)
+            matrix = pd.concat([matrix, self.create_new_row(matrix.columns, df_user)], ignore_index=True)
+
+        return matrix
+
+    def create_recommandation(self):
+        user_row = self.create_new_row(self.matrix.columns, self.user)
+        distances, indices = self.model.kneighbors(user_row)
+        m = self.matrix.iloc[indices.ravel()[0]]
+        return m.loc[m == True].index.to_list()
+
+    def predict(self):
+        return random.choice(self.recommandation)
+
+    def predict_selection(self, selection_size=10):
+        return random.choices(self.recommandation, k=selection_size)
